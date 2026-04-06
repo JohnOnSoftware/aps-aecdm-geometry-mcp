@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -20,6 +20,8 @@ using System.Reflection;
 // Check if we should run in HTTP mode
 var cmdArgs = Environment.GetCommandLineArgs();
 var httpMode = cmdArgs.Contains("--http") || cmdArgs.Contains("--web");
+
+Environment.SetEnvironmentVariable("NOADP", "True");
 
 if (httpMode)
 {
@@ -198,28 +200,6 @@ if (httpMode)
                             },
                             new
                             {
-                                name = "PerformClashDetection",
-                                description = "Perform accurate clash detection analysis between multiple building elements",
-                                inputSchema = new
-                                {
-                                    type = "object",
-                                    properties = new
-                                    {
-                                        elementIds = new { 
-                                            type = "array", 
-                                            items = new { type = "string" },
-                                            description = "Array of element IDs to analyze for clashes (minimum 2 elements required)" 
-                                        },
-                                        clashThreshold = new { 
-                                            type = "number", 
-                                            description = "Minimum clash volume threshold in cubic units (default: 0.01)" 
-                                        }
-                                    },
-                                    required = new[] { "elementIds" }
-                                }
-                            },
-                            new
-                            {
                                 name = "GetToken",
                                 description = "Get the token from the user",
                                 inputSchema = new
@@ -276,21 +256,42 @@ if (httpMode)
                             },
                             new
                             {
-                                name = "FindSpecificElementsContainedWithin",
-                                description = "Find specific elements by their AEC DM element IDs that are spatially contained inside a given container element using mesh geometry analysis",
+                                name = "FindElementsContainedWithin",
+                                description = "Find elements in given categories that are spatially contained inside a container. Pass Revit External ID for the container; server loads instances in the element group and checks containment.",
                                 inputSchema = new
                                 {
                                     type = "object",
                                     properties = new
                                     {
-                                        containerElementId = new { type = "string", description = "AEC DM Element ID of the container element that will be used to check containment" },
+                                        containerElementId = new { type = "string", description = "Revit External ID of the container element used to resolve geometry and check containment" },
+                                        categories = new {
+                                            type = "array",
+                                            items = new { type = "string" },
+                                            description = "Element categories to search (e.g. Walls, Doors, Windows). Instances only."
+                                        },
+                                        elementGroupId = new { type = "string", description = "Element group ID (design) from GetFiles — NOT file version URN" }
+                                    },
+                                    required = new[] { "containerElementId", "categories", "elementGroupId" }
+                                }
+                            },
+                            new
+                            {
+                                name = "FindSpecificElementsContainedWithin",
+                                description = "Find specific elements by Revit External ID inside a container. Pass element group id; server loads all instances in the group then filters to the container and requested external ids.",
+                                inputSchema = new
+                                {
+                                    type = "object",
+                                    properties = new
+                                    {
+                                        elementGroupId = new { type = "string", description = "Element group ID (design) from GetFiles — NOT file version URN" },
+                                        containerElementId = new { type = "string", description = "Revit External ID of the container element used to resolve geometry and check containment" },
                                         elementIds = new { 
                                             type = "array", 
                                             items = new { type = "string" },
-                                            description = "Array of AEC DM element IDs to check for containment within the container" 
+                                            description = "Revit External IDs of elements to check for containment within the container" 
                                         }
                                     },
-                                    required = new[] { "containerElementId", "elementIds" }
+                                    required = new[] { "elementGroupId", "containerElementId", "elementIds" }
                                 }
                             }
                         }
@@ -428,9 +429,6 @@ static async Task<object> HandleToolCall(JObject request)
                 arguments?["elementGroupId"]?.ToString() ?? "",
                 ExtractStringArray(arguments?["categories"]),
                 arguments?["fileName"]?.ToString()),
-            "PerformClashDetection" => await mcp_server_aecdm.Tools.AECDMTools.ClashDetectForElements(
-                ExtractStringArray(arguments?["elementIds"]),
-                arguments?["clashThreshold"]?.ToObject<double>() ?? 0.01),
 
             // AuthTools
             "GetToken" => await mcp_server_aecdm.Tools.AuthTools.GetToken(),
@@ -447,7 +445,12 @@ static async Task<object> HandleToolCall(JObject request)
                 arguments?["externalIds"]?.ToObject<string[]>() ?? new string[0]),
             "RenderModel" => await mcp_server_aecdm.ViewerTool.RenderModel(
                 arguments?["fileVersionUrn"]?.ToString() ?? ""),
+            "FindElementsContainedWithin" => await mcp_server_aecdm.Tools.AECDMTools.FindElementsContainedWithin(
+                arguments?["containerElementId"]?.ToString() ?? "",
+                ExtractStringArray(arguments?["categories"]),
+                arguments?["elementGroupId"]?.ToString() ?? ""),
             "FindSpecificElementsContainedWithin" => await mcp_server_aecdm.Tools.AECDMTools.FindSpecificElementsContainedWithin(
+                arguments?["elementGroupId"]?.ToString() ?? "",
                 arguments?["containerElementId"]?.ToString() ?? "",
                 ExtractStringArray(arguments?["elementIds"])),
 

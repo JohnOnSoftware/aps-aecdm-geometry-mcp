@@ -1,4 +1,4 @@
-﻿using ModelContextProtocol.Server;
+using ModelContextProtocol.Server;
 using System.ComponentModel;
 using Newtonsoft.Json.Linq;
 using System.Net;
@@ -7,6 +7,10 @@ using System.Text;
 using System.Web;
 using System.Security.Cryptography;
 using Autodesk.Data;
+using Autodesk.Data.AECDM.Interface;
+using Autodesk.Data.Enums;
+using Autodesk.Data.DataModels;
+
 
 namespace mcp_server_aecdm.Tools;
 
@@ -32,8 +36,9 @@ public static class AuthTools
 			HostApplicationVersion = "1.0.0",
 			ConnectorVersion = "1.0.0",
 		}; 
-		Global.SDKClient = new Autodesk.Data.Client(sdkOptions);
-		Global.AccessToken = Global.SDKClient.SDKOptions.AuthProvider.GetAuthToken();
+        var clientFactory = new DataSdkClientFactory();
+        Global.SDKClient = clientFactory.CreateAecdmClient(sdkOptions);
+        Global.AccessToken = Global.SDKClient.SDKOptions.AuthProvider.GetAuthToken();
     }
 
 }

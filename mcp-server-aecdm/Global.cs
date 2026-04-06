@@ -1,15 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.WebSockets;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using System.Web;
-using Autodesk.Data;
+﻿using System.Net.WebSockets;
 
 namespace mcp_server_aecdm
 {
@@ -22,7 +11,7 @@ namespace mcp_server_aecdm
 		public static string CallbackURL { get; set; }
 		public static string Scopes { get; set; }
 		public static string codeVerifier { get; set; }
-		public static Client SDKClient { get; set; }
+		public static Autodesk.Data.AECDM.Client SDKClient { get; set; }
 
 		public static WebSocket _webSocket = null;
 	}

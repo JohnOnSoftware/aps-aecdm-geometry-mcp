@@ -18,7 +18,7 @@ It continues as a comprehensive Model Context Protocol (MCP) local server implem
 - Claude Desktop by **stdio** communication
 - Autodesk Assistant by **Streamable HTTP** communication
 
-The MCP server provides natural language access models from Autodesk Construction Cloud data, do clash detection, spatial analysis, and 3D visualization capabilities.
+The MCP server provides natural language access models from Autodesk Construction Cloud data, spatial analysis, and 3D visualization capabilities.
 
 ## Features
 
@@ -26,7 +26,6 @@ The MCP server provides natural language access models from Autodesk Constructio
 - 🏗️ **BIM Navigation** - Browse hubs, projects, and element groups
 - 🔍 **Element Querying** - Filter and retrieve building elements by category
 - 📤 **IFC Export** - Export filtered elements to Industry Foundation Classes (IFC) format
-- ⚠️ **Clash Detection** - Accurate geometric clash detection using bounding box analysis
 - 📦 **Spatial Containment** - Find elements spatially contained within other elements
 - 📁 **File Upload** - Upload files to Autodesk Docs (ACC/BIM 360)
 - 👁️ **3D Visualization** - Render and highlight elements in Autodesk Viewer
@@ -68,6 +67,17 @@ git clone https://github.com/JohnOnSoftware/aps-aecdm-mcp-dotnet.git
 cd aps-aecdm-mcp-dotnet
 ```
 
+### Build
+
+From the repo root:
+
+```bash
+cd mcp-server-aecdm
+dotnet build
+```
+
+**Note:** The packages `Autodesk.Data` and `Autodesk.Data.GeometryDefinitions` are part of the [AEC Data Model Public Beta](https://feedback.autodesk.com/). If restore fails with "Unable to find package Autodesk.Data", join the beta, install the Data SDK as described in the beta program, and add the required NuGet source (or local packages) to `nuget.config`. Until then, GraphQL-only features (hubs, projects, element lists) can still work if you reference a build that has those packages available.
+
 ## Setup
 
 ### 1. Set Environment Variables
@@ -89,6 +99,14 @@ You need to configure your APS credentials as environment variables, or you can 
 ```
 
 ### 2. Running with AI Agent
+#### Cursor
+
+- This repo includes a Cursor MCP config in `.cursor/mcp.json`. After building the project:
+  1. Set your APS `CLIENT_ID` in `.cursor/mcp.json` under `mcpServers.aecdm.env`, or set the `CLIENT_ID` environment variable on your system.
+  2. Restart Cursor (MCP servers load at startup).
+  3. Enable the **aecdm** server in Cursor: **Settings → Tools & MCP** (or use the MCP panel).
+- If you use a different workspace root, ensure the `args` path to `mcp-server-aecdm.csproj` is correct, or use an absolute path.
+
 #### Claude Desktop
 
 - To connect this MCP server with Claude Desktop, add the following to your `claude_desktop_config.json` file:
